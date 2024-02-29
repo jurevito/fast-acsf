@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include "util.h"
 
 const double RADIAL_CUTOFF = 12;
 const double ANGULAR_CUTOFF = 6;
@@ -9,21 +10,6 @@ const double RADIAL_STEP = 0.5;
 const double ANGULAR_STEP = 2.0;
 const int N_THETA = 8;
 const int N_ELEMENTS = 9;
-
-typedef struct {
-    double x;
-    double y;
-    double z;
-    int atom_index;
-} Atom;
-
-double eucl_dist(Atom p1, Atom p2) {
-    double dx = p2.x - p1.x;
-    double dy = p2.y - p1.y;
-    double dz = p2.z - p1.z;
-
-    return sqrt(dx*dx + dy*dy + dz*dz);
-}
 
 double radial_sym_func(double Rij, double Rs) {
     const double Rc = RADIAL_CUTOFF;
@@ -73,48 +59,94 @@ void featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int num_p
     }
 
     //Setting PL distance matrix.
-    double** dist = malloc(num_mol_atom*sizeof(double*));
+    double** dist_lp = malloc(num_mol_atom*sizeof(double*));
     for (int i = 0; i < num_mol_atom; i++) {
-        dist[i] = malloc(num_protein_atom*sizeof(double));
+        dist_lp[i] = malloc(num_protein_atom*sizeof(double));
     }
 
-    // Setting result vector.
+    // Setting radial result vector.
     int radial_length = N_ELEMENTS*N_ELEMENTS * rs_radial_length;
-    double* result = calloc(radial_length, sizeof(double));
+    double* radial_result = calloc(radial_length, sizeof(double));
 
-    int smaller = 0;
-    double sum = 0;
+    // Setting angular result vector.
+    // int angular_length = N_ELEMENTS*N_ELEMENTS * rs_radial_length;
+    // double* angular_result = calloc(angular_length, sizeof(double));
 
     for (int i = 0; i < num_mol_atom; i++) {
         for (int j = 0; j < num_protein_atom; j++) {
-			dist[i][j] = eucl_dist(mol_atoms[i], protein_atoms[j]);
+			dist_lp[i][j] = eucl_dist(mol_atoms[i], protein_atoms[j]);
 
             // Calculate features only for pairs within radius.
-            if (dist[i][j] < RADIAL_CUTOFF) {
+            if (dist_lp[i][j] < RADIAL_CUTOFF) {
                 
                 // Calculate radial features.
                 for (int k = 0; k<rs_radial_length; k++) {
                     int index = (rs_radial_length*N_ELEMENTS*mol_atoms[i].atom_index) + (rs_radial_length*protein_atoms[j].atom_index) + k;
-                    result[index] += radial_sym_func(dist[i][j], rs_radial[k]);
+                    radial_result[index] += radial_sym_func(dist_lp[i][j], rs_radial[k]);
                 }
             }
 		}
     }
 
+    // This is how to get indeces of those I need to get angles.
+    // Much better. Instead of 1.017.000 it is only 42.025 which is 4%.
+    int count = 0;
+    for (int i = 0; i < num_mol_atom; i++) {
+        for (int j = 0; j < num_protein_atom; j++) {
+            if (dist_lp[i][j] < ANGULAR_CUTOFF) {
+                for (int k = j+1; k<num_protein_atom; k++) { 
+                    if (dist_lp[i][k] < ANGULAR_CUTOFF) {
+                        count++;
+                    }
+                }
+            }
+		}
+    }
+
+
+    /*
+    for (int i = 0; i < num_mol_atom; i++) {
+        for (int j = 0; j < num_subset_protein_atoms; j++) {
+            for (int k = j+1; k < num_subset_protein_atoms; k++) {
+                outer++; //FIXME: accessing indexes wrong 'dist_lp[i][j]' you cant use i and j.
+
+                // FIXME: angle function does not work correctly.
+                //angle = calc_angle(subset_protein_atoms[j], mol_atoms[i], subset_protein_atoms[k]);
+                for (int l = 0 ; l<rs_angular_length ; l++) {
+                    for (int m = 0 ; m<N_THETA; m++) {
+                        //double feat = angular_sym_func(dist_lp[i][j], dist_lp[i][k], angle, theta_list[m], rs_angular[l]);
+                    }
+                }
+            }
+        }
+    }
+    */
+
+    // TODO: Understand how it even works:
+    // - what is the limit between which atoms.
+    // - which distances do you need to pass to function.
+
+    // FIXME: it will take around 3s for featurizing only one.
     
+    // TODO: 
+    // - Calculate angle between three atoms.
+    // - Get P-P distances.
+    // - Figure out how is index calculated.
+
     // printf("radial_length: %d\n", radial_length);
     //for (int i = 0 ; i<20 ; i++) {
-    //    printf("result: %f\n", result[i]);
+    //    printf("radial_result: %f\n", radial_result[i]);
     //}
-    //printf("Matrix has %d element (%d)\n", num_mol_atom*num_protein_atom, smaller);
+    printf("Matrix has %d element\n", num_mol_atom*num_protein_atom);
+
 
     // Free all memory that was used.
     free(rs_radial);
     free(rs_angular);
     free(theta_list);
     for (int i = 0; i < num_mol_atom; i++) {
-        free(dist[i]);
+        free(dist_lp[i]);
     }
-    free(dist);
-    free(result);
+    free(dist_lp);
+    free(radial_result);
 }
