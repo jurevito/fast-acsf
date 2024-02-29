@@ -13,14 +13,6 @@ double dot_product(Atom a, Atom b) {
     return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
-Atom cross_product(Atom a, Atom b) {
-    Atom result;
-    result.x = a.y * b.z - a.z * b.y;
-    result.y = a.z * b.x - a.x * b.z;
-    result.z = a.x * b.y - a.y * b.x;
-    return result;
-}
-
 double magnitude(Atom a) {
     return sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
 }

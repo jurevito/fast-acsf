@@ -16,7 +16,6 @@ typedef struct {
 
 double eucl_dist(Atom p1, Atom p2);
 double dot_product(Atom a, Atom b);
-Atom cross_product(Atom a, Atom b);
 double magnitude(Atom a);
 double calc_angle(Atom a, Atom b, Atom c);
 #endif
