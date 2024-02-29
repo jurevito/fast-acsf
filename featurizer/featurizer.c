@@ -43,10 +43,6 @@ double angular_sym_func(double Rij, double Rik, double theta_ijk, double theta, 
     return pow(2, 1-zeta) * pow(1 + cos(theta_ijk - theta), zeta) * exp(-eta * pow(((Rij + Rik) / 2 - Rs), 2)) * fc_Rij * fc_Rik;
 }
 
-int square(int x) {
-	return x*x;
-}
-
 void featurize(Coord* mol_atoms, int num_mol_atom, Coord* protein_atoms, int num_protein_atom) {
 
     // Setting radial steps.

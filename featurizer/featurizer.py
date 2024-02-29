@@ -13,16 +13,8 @@ class Coord(ctypes.Structure):
         ("atom_index", ctypes.c_int),
     ]
 
-_lib.square.argtypes = [ctypes.c_int]
-_lib.square.restype = ctypes.c_int
-
 _lib.featurize.argtypes = [ctypes.POINTER(Coord), ctypes.c_int]
 _lib.featurize.restype = None
-
-def square(x: int) -> int:
-    global _lib
-    result = _lib.square(x)
-    return int(result)
 
 """
 Num: 1, Sym: H

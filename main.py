@@ -1,5 +1,5 @@
 from rdkit import Chem
-from featurizer.featurizer import square, featurize
+from featurizer.featurizer import featurize
 import numpy as np
 import time
 
@@ -22,6 +22,5 @@ if __name__ == '__main__':
         start_time = time.perf_counter()
         featurize(mol_coords, mol_atom_nums, protein_coords, protein_atom_nums)
         stop_time = time.perf_counter()
-
-        print(f'Execution time: {(stop_time - start_time)*1000: 2f}ms')
+        print(f'Execution time: {(stop_time - start_time)*1000:.2f}ms')
         break
