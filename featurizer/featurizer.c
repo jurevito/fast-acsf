@@ -90,17 +90,47 @@ void featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int num_p
 
     // This is how to get indeces of those I need to get angles.
     // Much better. Instead of 1.017.000 it is only 42.025 which is 4%.
-    int count = 0;
+    int num_close_triplets = 0;
     for (int i = 0; i < num_mol_atom; i++) {
         for (int j = 0; j < num_protein_atom; j++) {
             if (dist_lp[i][j] < ANGULAR_CUTOFF) {
                 for (int k = j+1; k<num_protein_atom; k++) { 
                     if (dist_lp[i][k] < ANGULAR_CUTOFF) {
-                        count++;
+                        num_close_triplets++;
                     }
                 }
             }
 		}
+    }
+
+    int index = 0;
+    Triplet* triplet_idxs = malloc(num_close_triplets * sizeof(Triplet));
+    for (int i = 0; i < num_mol_atom; i++) {
+        for (int j = 0; j < num_protein_atom; j++) {
+            if (dist_lp[i][j] < ANGULAR_CUTOFF) {
+                for (int k = j+1; k<num_protein_atom; k++) { 
+                    if (dist_lp[i][k] < ANGULAR_CUTOFF) {
+                        triplet_idxs[index].lig_idx = i;
+                        triplet_idxs[index].p1_idx = j;
+                        triplet_idxs[index].p2_idx = k;
+                        index++;
+                    }
+                }
+            }
+		}
+    }
+
+    for (int i = 0; i < num_close_triplets; i++) {
+        int lig_idx = triplet_idxs[i].lig_idx;
+        int p1_idx = triplet_idxs[i].p1_idx;
+        int p2_idx = triplet_idxs[i].p2_idx;
+
+        double angle = calc_angle(mol_atoms[lig_idx], protein_atoms[p1_idx], protein_atoms[p2_idx]);
+        for (int l = 0 ; l<rs_angular_length ; l++) {
+            for (int m = 0 ; m<N_THETA; m++) {
+                double feat = angular_sym_func(dist_lp[lig_idx][p1_idx], dist_lp[lig_idx][p2_idx], angle, theta_list[m], rs_angular[l]);
+            }
+        }
     }
 
 
@@ -137,7 +167,7 @@ void featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int num_p
     //for (int i = 0 ; i<20 ; i++) {
     //    printf("radial_result: %f\n", radial_result[i]);
     //}
-    printf("Matrix has %d element\n", num_mol_atom*num_protein_atom);
+    printf("Matrix has %d element, count: %d\n", num_mol_atom*num_protein_atom, num_close_triplets);
 
 
     // Free all memory that was used.
@@ -148,5 +178,6 @@ void featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int num_p
         free(dist_lp[i]);
     }
     free(dist_lp);
+    free(triplet_idxs);
     free(radial_result);
 }
