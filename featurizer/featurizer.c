@@ -15,9 +15,9 @@ typedef struct {
     double y;
     double z;
     int atom_index;
-} Coord;
+} Atom;
 
-double eucl_dist(Coord p1, Coord p2) {
+double eucl_dist(Atom p1, Atom p2) {
     double dx = p2.x - p1.x;
     double dy = p2.y - p1.y;
     double dz = p2.z - p1.z;
@@ -43,7 +43,7 @@ double angular_sym_func(double Rij, double Rik, double theta_ijk, double theta, 
     return pow(2, 1-zeta) * pow(1 + cos(theta_ijk - theta), zeta) * exp(-eta * pow(((Rij + Rik) / 2 - Rs), 2)) * fc_Rij * fc_Rik;
 }
 
-void featurize(Coord* mol_atoms, int num_mol_atom, Coord* protein_atoms, int num_protein_atom) {
+void featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int num_protein_atom) {
 
     // Setting radial steps.
     int rs_radial_length = ceil((RADIAL_CUTOFF - 0.5) / RADIAL_STEP);

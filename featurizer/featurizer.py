@@ -5,7 +5,7 @@ import os
 # Load shared _library and set argument types.
 _lib = ctypes.CDLL('./featurizer/featurizer.dll')
 
-class Coord(ctypes.Structure):
+class Atom(ctypes.Structure):
     _fields_ = [
         ("x", ctypes.c_double),
         ("y", ctypes.c_double),
@@ -13,7 +13,7 @@ class Coord(ctypes.Structure):
         ("atom_index", ctypes.c_int),
     ]
 
-_lib.featurize.argtypes = [ctypes.POINTER(Coord), ctypes.c_int]
+_lib.featurize.argtypes = [ctypes.POINTER(Atom), ctypes.c_int]
 _lib.featurize.restype = None
 
 """
@@ -30,14 +30,14 @@ Other Du
 atom_to_index = dict(zip([1, 6, 7, 8, 15, 16, 17, 30], range(10)))
 
 def convert_to_c_atom(coords: np.array, atom_nums: list[int]):
-    coords_array = (Coord * len(coords))()
+    atom_array = (Atom * len(coords))()
     for i, ((x, y, z), atom_num) in enumerate(zip(coords, atom_nums)):
-        coords_array[i].x = x
-        coords_array[i].y = y
-        coords_array[i].z = z
-        coords_array[i].atom_index = atom_to_index.get(atom_num, len(atom_to_index))
+        atom_array[i].x = x
+        atom_array[i].y = y
+        atom_array[i].z = z
+        atom_array[i].atom_index = atom_to_index.get(atom_num, len(atom_to_index))
 
-    return coords_array
+    return atom_array
 
 def featurize(mol_coords: np.array, mol_atom_nums: list[int], protein_coords: np.array, protein_atom_nums: list[int]):
     mol_array = convert_to_c_atom(mol_coords, mol_atom_nums)
