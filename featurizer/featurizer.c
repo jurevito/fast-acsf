@@ -68,10 +68,6 @@ void featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int num_p
     int radial_length = N_ELEMENTS*N_ELEMENTS * rs_radial_length;
     double* radial_result = calloc(radial_length, sizeof(double));
 
-    // Setting angular result vector.
-    // int angular_length = N_ELEMENTS*N_ELEMENTS * rs_radial_length;
-    // double* angular_result = calloc(angular_length, sizeof(double));
-
     for (int i = 0; i < num_mol_atom; i++) {
         for (int j = 0; j < num_protein_atom; j++) {
 			dist_lp[i][j] = eucl_dist(mol_atoms[i], protein_atoms[j]);
@@ -103,6 +99,10 @@ void featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int num_p
 		}
     }
 
+    // Setting angular result vector.
+    int angular_length = N_ELEMENTS * binom(N_ELEMENTS+1, 2) * N_THETA * rs_angular_length;
+    double* angular_result = calloc(angular_length, sizeof(double));
+
     int index = 0;
     Triplet* triplet_idxs = malloc(num_close_triplets * sizeof(Triplet));
     for (int i = 0; i < num_mol_atom; i++) {
@@ -133,34 +133,7 @@ void featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int num_p
         }
     }
 
-
-    /*
-    for (int i = 0; i < num_mol_atom; i++) {
-        for (int j = 0; j < num_subset_protein_atoms; j++) {
-            for (int k = j+1; k < num_subset_protein_atoms; k++) {
-                outer++; //FIXME: accessing indexes wrong 'dist_lp[i][j]' you cant use i and j.
-
-                // FIXME: angle function does not work correctly.
-                //angle = calc_angle(subset_protein_atoms[j], mol_atoms[i], subset_protein_atoms[k]);
-                for (int l = 0 ; l<rs_angular_length ; l++) {
-                    for (int m = 0 ; m<N_THETA; m++) {
-                        //double feat = angular_sym_func(dist_lp[i][j], dist_lp[i][k], angle, theta_list[m], rs_angular[l]);
-                    }
-                }
-            }
-        }
-    }
-    */
-
-    // TODO: Understand how it even works:
-    // - what is the limit between which atoms.
-    // - which distances do you need to pass to function.
-
-    // FIXME: it will take around 3s for featurizing only one.
-    
     // TODO: 
-    // - Calculate angle between three atoms.
-    // - Get P-P distances.
     // - Figure out how is index calculated.
 
     // printf("radial_length: %d\n", radial_length);
@@ -168,7 +141,6 @@ void featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int num_p
     //    printf("radial_result: %f\n", radial_result[i]);
     //}
     printf("Matrix has %d element, count: %d\n", num_mol_atom*num_protein_atom, num_close_triplets);
-
 
     // Free all memory that was used.
     free(rs_radial);
@@ -180,4 +152,5 @@ void featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int num_p
     free(dist_lp);
     free(triplet_idxs);
     free(radial_result);
+    free(angular_result);
 }

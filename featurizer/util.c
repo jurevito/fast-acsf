@@ -37,3 +37,14 @@ double calc_angle(Atom a, Atom b, Atom c) {
 
     return angle_rad;
 }
+
+int fac(int n) {
+    if (n == 0 || n == 1)
+        return 1;
+    else
+        return n * fac(n - 1);
+}
+
+int binom(int n, int k) {
+    return fac(n) / (fac(k) * fac(n - k));
+}
