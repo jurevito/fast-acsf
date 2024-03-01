@@ -143,51 +143,20 @@ void featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int num_p
         int p1_idx = triplet_idxs[i].p1_idx;
         int p2_idx = triplet_idxs[i].p2_idx;
 
+        int lig_atom_idx = mol_atoms[lig_idx].atom_index;
+        int p1_atom_idx = protein_atoms[p1_idx].atom_index;
+        int p2_atom_idx = protein_atoms[p2_idx].atom_index;
+
         double angle = calc_angle(mol_atoms[lig_idx], protein_atoms[p1_idx], protein_atoms[p2_idx]);
         for (int l = 0 ; l<rs_angular_length ; l++) {
             for (int m = 0 ; m<N_THETA; m++) {
-
-                int lig_atom_idx = mol_atoms[lig_idx].atom_index;
-                int p1_atom_idx = protein_atoms[p1_idx].atom_index;
-                int p2_atom_idx = protein_atoms[p2_idx].atom_index;
-
                 int index = find_angular_index(lig_atom_idx, p1_atom_idx, p2_atom_idx,precomp_index[p1_atom_idx], m, l, rs_angular_length);
-                //if (index >= angular_length || 0>index) {
-                //    printf("Index: %d using (%d, %d, %d) with (%d, %d)\n", index, p1_atom_idx,lig_atom_idx,p2_atom_idx,m,l);
-                //}
-                double feat = angular_sym_func(dist_lp[lig_idx][p1_idx], dist_lp[lig_idx][p2_idx], angle, theta_list[m], rs_angular[l]);
-                angular_result[index] += feat;
-
-                if (lig_atom_idx == 0 &&
-                    p1_atom_idx == 0 &&
-                    p2_atom_idx == 2 &&
-                    m == 1 &&
-                    l == 1) {
-                        feat_sum += feat;
-                    }
+                angular_result[index] += angular_sym_func(dist_lp[lig_idx][p1_idx], dist_lp[lig_idx][p2_idx], angle, theta_list[m], rs_angular[l]);
             }
         }
     }
 
-    // TODO: 
-    // - Figure out how is index calculated.
-    for (int i = 0 ; i<2 ; i++) {
-        printf("index: %d\n", find_angular_index(0, 0, 1, precomp_index[0], 0, 0, rs_angular_length));
-    }
-
-    // printf("radial_length: %d\n", radial_length);
-    for (int i = 1085 ; i<1085+10 ; i++) {
-        
-        printf("angular_result: %.8f (%d)\n", angular_result[i], i);
-            //break;
-
-    }
-    printf("specific: %.8f\n", angular_result[1085]);
-    int idx = find_angular_index(0,1,0,precomp_index[1],1, 2, rs_angular_length);
-    printf("idx: %d, precomp: %d, num_rs: %d, num_theta: %d\n", idx, precomp_index[3], rs_angular_length, N_THETA);
-
-
-    printf("FeatSum: %.8f, radial: %d\n", feat_sum, radial_length);
+    printf("Specific: %.8f\n", angular_result[1085]);
     printf("Matrix has %d element, count: %d\n", num_mol_atom*num_protein_atom, num_close_triplets);
 
     // Free all memory that was used.
