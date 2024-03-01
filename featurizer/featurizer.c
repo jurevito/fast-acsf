@@ -30,11 +30,10 @@ double angular_sym_func(double Rij, double Rik, double theta_ijk, double theta, 
 }
 
 int find_angular_index(int lig_atom_idx, int p1_atom_idx, int p2_atom_idx, int th, int rs, int rs_angular_length) {
-    int precomp = (p1_atom_idx / 2.0f * (2 * N_ELEMENTS + (p1_atom_idx - 1) * -1));
-    int part1 = (N_ELEMENTS*(N_ELEMENTS+1) / 2 * lig_atom_idx) * (N_THETA*rs_angular_length);
-    int part2 = precomp * (N_THETA*rs_angular_length);
-    int part3 = (p2_atom_idx-p1_atom_idx) * (N_THETA*rs_angular_length);
-    return part1 + part2 + part3 + th*rs_angular_length + rs;
+    int part1 = (N_ELEMENTS*(N_ELEMENTS+1) / 2 * lig_atom_idx);
+    int part2 = (p1_atom_idx / 2.0f * (2 * N_ELEMENTS - p1_atom_idx + 1));
+    int part3 = (p2_atom_idx-p1_atom_idx);
+    return N_THETA*rs_angular_length*(part1 + part2 + part3) + th*rs_angular_length + rs;
 }
 
 void featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int num_protein_atom) {
