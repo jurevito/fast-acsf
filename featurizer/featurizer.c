@@ -29,7 +29,8 @@ double angular_sym_func(double Rij, double Rik, double theta_ijk, double theta, 
     return pow(2, 1-zeta) * pow(1 + cos(theta_ijk - theta), zeta) * exp(-eta * pow(((Rij + Rik) / 2 - Rs), 2)) * fc_Rij * fc_Rik;
 }
 
-int find_angular_index(int lig_atom_idx, int p1_atom_idx, int p2_atom_idx, int precomp, int th, int rs, int rs_angular_length) {
+int find_angular_index(int lig_atom_idx, int p1_atom_idx, int p2_atom_idx, int th, int rs, int rs_angular_length) {
+    int precomp = (p1_atom_idx / 2.0f * (2 * N_ELEMENTS + (p1_atom_idx - 1) * -1));
     int part1 = (N_ELEMENTS*(N_ELEMENTS+1) / 2 * lig_atom_idx) * (N_THETA*rs_angular_length);
     int part2 = precomp * (N_THETA*rs_angular_length);
     int part3 = (p2_atom_idx-p1_atom_idx) * (N_THETA*rs_angular_length);
@@ -127,16 +128,6 @@ void featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int num_p
 		}
     }
 
-    // Precompute indexes.
-    int* precomp_index = malloc(N_ELEMENTS*sizeof(int));
-    for (int i = 0 ; i<N_ELEMENTS ; i++) {
-        int sum = 0;
-        for (int j = 0 ; j<i ; j++) {
-            sum += N_ELEMENTS - j;
-        }
-        precomp_index[i] = sum;
-    }
-
     double feat_sum = 0;
     for (int i = 0; i < num_close_triplets; i++) {
         int lig_idx = triplet_idxs[i].lig_idx;
@@ -150,7 +141,7 @@ void featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int num_p
         double angle = calc_angle(mol_atoms[lig_idx], protein_atoms[p1_idx], protein_atoms[p2_idx]);
         for (int l = 0 ; l<rs_angular_length ; l++) {
             for (int m = 0 ; m<N_THETA; m++) {
-                int index = find_angular_index(lig_atom_idx, p1_atom_idx, p2_atom_idx,precomp_index[p1_atom_idx], m, l, rs_angular_length);
+                int index = find_angular_index(lig_atom_idx, p1_atom_idx, p2_atom_idx, m, l, rs_angular_length);
                 angular_result[index] += angular_sym_func(dist_lp[lig_idx][p1_idx], dist_lp[lig_idx][p2_idx], angle, theta_list[m], rs_angular[l]);
             }
         }
