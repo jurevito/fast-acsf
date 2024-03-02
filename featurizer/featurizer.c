@@ -33,6 +33,10 @@ int angular_index(int p1_atom_idx, int lig_atom_idx, int p2_atom_idx, int th, in
     return index + th*rs_angular_length + rs;
 }
 
+void free_features(double* features) {
+    free(features);
+}
+
 Result featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int num_protein_atom, Config config) {
 
     // Initializing radial steps.

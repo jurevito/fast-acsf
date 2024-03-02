@@ -1,9 +1,13 @@
 import ctypes
 import numpy as np
 from rdkit import Chem
+import os
 
-# Load shared _library and set argument types. # FIXME: load also on linux.
-_lib = ctypes.CDLL('./featurizer/featurizer.dll')
+# Load shared library.
+current_dir = os.path.dirname(os.path.abspath(__file__))
+lib_name = 'featurizer.dll' if os.name == 'nt' else 'featurizer.so'
+lib_path = os.path.join(current_dir, lib_name)
+_lib = ctypes.CDLL(lib_path)
 
 class Atom(ctypes.Structure):
     _fields_ = [
@@ -79,12 +83,8 @@ class Featurizer:
         config = self.__setup_config()
 
         result = _lib.featurize(mol_array, len(mol_coords), protein_array, len(protein_coords), config)
-        print(f'Size: {result.size}')
-
         res = np.ctypeslib.as_array(result.features, shape=(result.size,))
         res = np.copy(res)
 
-        # FIXME: free result vector memory in C.
-        #_lib.free(result_ptr)
-
+        _lib.free_features(result.features)
         return res
