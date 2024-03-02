@@ -30,13 +30,19 @@ double angular_sym_func(double Rij, double Rik, double theta_ijk, double theta, 
 }
 
 int find_angular_index(int lig_atom_idx, int p1_atom_idx, int p2_atom_idx, int th, int rs, int rs_angular_length) {
+    if (p1_atom_idx > p2_atom_idx) {
+        int tmp = p1_atom_idx;
+        p1_atom_idx = p2_atom_idx;
+        p2_atom_idx = tmp;
+    }
+    
     int part1 = (N_ELEMENTS*(N_ELEMENTS+1) / 2 * lig_atom_idx);
     int part2 = (p1_atom_idx / 2.0f * (2 * N_ELEMENTS - p1_atom_idx + 1));
     int part3 = (p2_atom_idx-p1_atom_idx);
     return N_THETA*rs_angular_length*(part1 + part2 + part3) + th*rs_angular_length + rs;
 }
 
-void featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int num_protein_atom) {
+double* featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int num_protein_atom) {
 
     // Setting radial steps.
     int rs_radial_length = ceil((RADIAL_CUTOFF - 0.5) / RADIAL_STEP);
@@ -71,9 +77,10 @@ void featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int num_p
         dist_lp[i] = malloc(num_protein_atom*sizeof(double));
     }
 
-    // Setting radial result vector.
+    // Setting result vector.
     int radial_length = N_ELEMENTS*N_ELEMENTS * rs_radial_length;
-    double* radial_result = calloc(radial_length, sizeof(double)); 
+    int angular_length = N_ELEMENTS * binom(N_ELEMENTS+1, 2) * N_THETA * rs_angular_length;
+    double* result = calloc(radial_length + angular_length, sizeof(double));
 
     for (int i = 0; i < num_mol_atom; i++) {
         for (int j = 0; j < num_protein_atom; j++) {
@@ -85,7 +92,7 @@ void featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int num_p
                 // Calculate radial features.
                 for (int k = 0; k<rs_radial_length; k++) {
                     int index = (rs_radial_length*N_ELEMENTS*mol_atoms[i].atom_index) + (rs_radial_length*protein_atoms[j].atom_index) + k;
-                    radial_result[index] += radial_sym_func(dist_lp[i][j], rs_radial[k]);
+                    result[index] += radial_sym_func(dist_lp[i][j], rs_radial[k]);
                 }
             }
 		}
@@ -105,10 +112,6 @@ void featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int num_p
             }
 		}
     }
-
-    // Setting angular result vector.
-    int angular_length = N_ELEMENTS * binom(N_ELEMENTS+1, 2) * N_THETA * rs_angular_length;
-    double* angular_result = calloc(angular_length, sizeof(double));
 
     int index = 0;
     Triplet* triplet_idxs = malloc(num_close_triplets * sizeof(Triplet));
@@ -141,13 +144,33 @@ void featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int num_p
         for (int l = 0 ; l<rs_angular_length ; l++) {
             for (int m = 0 ; m<N_THETA; m++) {
                 int index = find_angular_index(lig_atom_idx, p1_atom_idx, p2_atom_idx, m, l, rs_angular_length);
-                angular_result[index] += angular_sym_func(dist_lp[lig_idx][p1_idx], dist_lp[lig_idx][p2_idx], angle, theta_list[m], rs_angular[l]);
+                double feat = angular_sym_func(dist_lp[lig_idx][p1_idx], dist_lp[lig_idx][p2_idx], angle, theta_list[m], rs_angular[l]);
+                result[index + radial_length] += feat;
+                if (p1_atom_idx == 0 &&
+                    lig_atom_idx == 0 &&
+                    p2_atom_idx == 0 &&
+                    m == 1 &&
+                    l == 1) {
+                        feat_sum += feat;
+                }
+
+                if (index == 4 && (p1_atom_idx != 0 ||
+                    lig_atom_idx != 0 ||
+                    p2_atom_idx != 0 ||
+                    m != 1 ||
+                    l != 1)) {
+                        printf("FUCK: (%d, %d, %d) (th = %d, rs = %d)\n", lig_atom_idx, p1_atom_idx, p2_atom_idx, m, l);
+                }
+                //if (index == 200) {
+                //    printf("INFO: (%d, %d, %d) (th = %d, rs = %d)\n", lig_atom_idx, p1_atom_idx, p2_atom_idx, m, l);
+                //}
             }
         }
     }
 
-    printf("Specific: %.8f\n", angular_result[1085]);
-    printf("Matrix has %d element, count: %d\n", num_mol_atom*num_protein_atom, num_close_triplets);
+    int ang_index = find_angular_index(0, 0, 8, 2, 2, rs_angular_length);
+    printf("Specific: %.8f, Feat Sum: %f, Index: %d, radial_len: %d\n", result[1867], feat_sum, ang_index, radial_length);
+    printf("Result has %d element\n", radial_length + angular_length);
 
     // Free all memory that was used.
     free(rs_radial);
@@ -158,6 +181,6 @@ void featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int num_p
     }
     free(dist_lp);
     free(triplet_idxs);
-    free(radial_result);
-    free(angular_result);
+
+    return result;
 }

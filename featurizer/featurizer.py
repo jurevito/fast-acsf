@@ -13,8 +13,8 @@ class Atom(ctypes.Structure):
         ("atom_index", ctypes.c_int),
     ]
 
-_lib.featurize.argtypes = [ctypes.POINTER(Atom), ctypes.c_int]
-_lib.featurize.restype = None
+_lib.featurize.argtypes = [ctypes.POINTER(Atom), ctypes.c_int, ctypes.POINTER(Atom), ctypes.c_int]
+_lib.featurize.restype = ctypes.POINTER(ctypes.c_double)
 
 """
 Num: 1, Sym: H
@@ -43,4 +43,13 @@ def featurize(mol_coords: np.array, mol_atom_nums: list[int], protein_coords: np
     mol_array = convert_to_c_atom(mol_coords, mol_atom_nums)
     protein_array = convert_to_c_atom(protein_coords, protein_atom_nums)
 
-    _lib.featurize(mol_array, len(mol_coords), protein_array, len(protein_coords))
+    result_ptr = _lib.featurize(mol_array, len(mol_coords), protein_array, len(protein_coords))
+
+    # Convert the result pointer to a NumPy array
+    result = np.ctypeslib.as_array(result_ptr, shape=(11583,)) # FIXME: Size is hardcoded.
+    result = np.copy(result)
+
+    # Free the memory allocated in C
+    #_lib.free(result_ptr)
+
+    return result
