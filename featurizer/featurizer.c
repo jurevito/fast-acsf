@@ -98,25 +98,25 @@ double* featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int nu
     }
 
     // Search for triplets of atoms close by to each other.
-    for (int lig_idx = 0; lig_idx < num_mol_atom; lig_idx++) {
-        for (int p1_idx = 0; p1_idx < num_protein_atom; p1_idx++) {
-            if (dist[lig_idx][p1_idx] < ANGULAR_CUTOFF) {
-                for (int p2_idx = p1_idx+1; p2_idx<num_protein_atom; p2_idx++) { 
-                    if (dist[lig_idx][p2_idx] < ANGULAR_CUTOFF) {
+    for (int i = 0; i < num_mol_atom; i++) {
+        for (int j = 0; j < num_protein_atom; j++) {
+            if (dist[i][j] < ANGULAR_CUTOFF) {
+                for (int k = j+1; k<num_protein_atom; k++) { 
+                    if (dist[i][k] < ANGULAR_CUTOFF) {
                         
-                        int lig_atom_idx = mol_atoms[lig_idx].atom_index;
-                        int p1_atom_idx = protein_atoms[p1_idx].atom_index;
-                        int p2_atom_idx = protein_atoms[p2_idx].atom_index;
+                        int lig_atom_idx = mol_atoms[i].atom_index;
+                        int p1_atom_idx = protein_atoms[j].atom_index;
+                        int p2_atom_idx = protein_atoms[k].atom_index;
 
                         // Calculate angular features.
-                        double angle = calc_angle(mol_atoms[lig_idx], protein_atoms[p1_idx], protein_atoms[p2_idx]);
-                        double fc_Rij = 0.5 * cos(M_PI * dist[lig_idx][p1_idx] / ANGULAR_CUTOFF) + 0.5;
-                        double fc_Rik = 0.5 * cos(M_PI * dist[lig_idx][p2_idx] / ANGULAR_CUTOFF) + 0.5;
+                        double angle = calc_angle(mol_atoms[i], protein_atoms[j], protein_atoms[k]);
+                        double fc_Rij = 0.5 * cos(M_PI * dist[i][j] / ANGULAR_CUTOFF) + 0.5;
+                        double fc_Rik = 0.5 * cos(M_PI * dist[i][k] / ANGULAR_CUTOFF) + 0.5;
 
                         for (int l = 0 ; l<rs_angular_length ; l++) {
                             for (int m = 0 ; m<N_THETA; m++) {
                                 int index = angular_index(p1_atom_idx, lig_atom_idx, p2_atom_idx, m, l, rs_angular_length);
-                                result[index + radial_length] += angular_sym_func(dist[lig_idx][p1_idx], dist[lig_idx][p2_idx], angle, theta_list[m], rs_angular[l], fc_Rij, fc_Rik);
+                                result[index + radial_length] += angular_sym_func(dist[i][j], dist[i][k], angle, theta_list[m], rs_angular[l], fc_Rij, fc_Rik);
                             }
                         }
                     }
@@ -124,9 +124,6 @@ double* featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int nu
             }
 		}
     }
-
-    //printf("Specific: %.8f, radial_len: %d\n", result[1867], radial_length);
-    //printf("Result has %d element\n", radial_length + angular_length);
 
     // Free all memory that was used.
     free(rs_radial);
