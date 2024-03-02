@@ -123,7 +123,7 @@ double* featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int nu
                     }
                 }
             }
-		}
+        }
     }
 
     for (int i = 0; i < num_mol_atom; i++) {
