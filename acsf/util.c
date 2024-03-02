@@ -1,21 +1,17 @@
-#include <math.h>
 #include "util.h"
+#include <math.h>
 
 double eucl_dist(Atom p1, Atom p2) {
     double dx = p2.x - p1.x;
     double dy = p2.y - p1.y;
     double dz = p2.z - p1.z;
 
-    return sqrt(dx*dx + dy*dy + dz*dz);
+    return sqrt(dx * dx + dy * dy + dz * dz);
 }
 
-double dot_product(Atom a, Atom b) {
-    return a.x * b.x + a.y * b.y + a.z * b.z;
-}
+double dot_product(Atom a, Atom b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
 
-double magnitude(Atom a) {
-    return sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
-}
+double magnitude(Atom a) { return sqrt(a.x * a.x + a.y * a.y + a.z * a.z); }
 
 double calc_angle(Atom a, Atom b, Atom c) {
     Atom ab, ac;
@@ -45,6 +41,4 @@ int fac(int n) {
         return n * fac(n - 1);
 }
 
-int binom(int n, int k) {
-    return fac(n) / (fac(k) * fac(n - k));
-}
+int binom(int n, int k) { return fac(n) / (fac(k) * fac(n - k)); }
