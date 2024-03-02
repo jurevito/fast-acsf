@@ -30,7 +30,7 @@ class Result(ctypes.Structure):
     ]
 
 _lib.featurize.argtypes = [ctypes.POINTER(Atom), ctypes.c_int, ctypes.POINTER(Atom), ctypes.c_int, Config]
-_lib.featurize.restype = ctypes.POINTER(ctypes.c_double)
+_lib.featurize.restype = Result
 
 class Featurizer:
     def __init__(self, 
@@ -78,12 +78,13 @@ class Featurizer:
         protein_array = self.__convert_to_c_atom(protein_coords, protein_atom_nums)
         config = self.__setup_config()
 
-        result_ptr = _lib.featurize(mol_array, len(mol_coords), protein_array, len(protein_coords), config)
+        result = _lib.featurize(mol_array, len(mol_coords), protein_array, len(protein_coords), config)
+        print(f'Size: {result.size}')
 
-        result = np.ctypeslib.as_array(result_ptr, shape=(11583,)) # FIXME: Size is hardcoded.
-        result = np.copy(result)
+        res = np.ctypeslib.as_array(result.features, shape=(result.size,))
+        res = np.copy(res)
 
         # FIXME: free result vector memory in C.
         #_lib.free(result_ptr)
 
-        return result
+        return res

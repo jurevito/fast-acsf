@@ -33,7 +33,7 @@ int angular_index(int p1_atom_idx, int lig_atom_idx, int p2_atom_idx, int th, in
     return index + th*rs_angular_length + rs;
 }
 
-double* featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int num_protein_atom, Config config) {
+Result featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int num_protein_atom, Config config) {
 
     // Initializing radial steps.
     int rs_radial_length = ceil((config.radial_cutoff - 0.5) / config.radial_step);
@@ -61,10 +61,10 @@ double* featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int nu
         dist[i] = malloc(num_protein_atom*sizeof(double));
     }
 
-    // Initializing result vector.
+    // Initializing features vector.
     int radial_length = config.num_elems*config.num_elems * rs_radial_length;
     int angular_length = config.num_elems * binom(config.num_elems+1, 2) * config.num_theta * rs_angular_length;
-    double* result = calloc(radial_length + angular_length, sizeof(double));
+    double* features = calloc(radial_length + angular_length, sizeof(double));
 
     for (int i = 0; i < num_mol_atom; i++) {
         for (int j = 0; j < num_protein_atom; j++) {
@@ -76,7 +76,7 @@ double* featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int nu
                 // Calculate radial features.
                 for (int k = 0; k<rs_radial_length; k++) {
                     int index = (rs_radial_length*config.num_elems*mol_atoms[i].atom_index) + (rs_radial_length*protein_atoms[j].atom_index) + k;
-                    result[index] += radial_sym_func(dist[i][j], rs_radial[k], config.radial_cutoff);
+                    features[index] += radial_sym_func(dist[i][j], rs_radial[k], config.radial_cutoff);
                 }
             }
 		}
@@ -109,7 +109,7 @@ double* featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int nu
                         for (int l = 0 ; l<rs_angular_length ; l++) {
                             for (int m = 0 ; m<config.num_theta; m++) {
                                 int index = angular_index(p1_atom_idx, lig_atom_idx, p2_atom_idx, m, l, rs_angular_length, config.num_elems, config.num_theta);
-                                result[index + radial_length] += angular_sym_func(dist[i][j], dist[i][k], angle, theta_list[m], rs_angular[l], fc_Rij, fc_Rik, config.angular_cutoff);
+                                features[index + radial_length] += angular_sym_func(dist[i][j], dist[i][k], angle, theta_list[m], rs_angular[l], fc_Rij, fc_Rik, config.angular_cutoff);
                             }
                         }
                     }
@@ -126,6 +126,6 @@ double* featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int nu
     free(rs_angular);
     free(theta_list);
 
-    //Result result = {result, radial_length + angular_length};
+    Result result = {features, radial_length + angular_length};
     return result;
 }
