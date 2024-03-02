@@ -1,5 +1,5 @@
 from rdkit import Chem
-from featurizer.featurizer import Featurizer
+from acsf.featurizer import Featurizer
 import numpy as np
 import pandas as pd
 import time
@@ -17,14 +17,13 @@ if __name__ == '__main__':
     protein = Chem.AddHs(protein, addCoords=True, addResidueInfo=True)
     protein_coords = protein.GetConformer().GetPositions()
     protein_atom_nums = [atom.GetAtomicNum() for atom in protein.GetAtoms()]
-
     row_example = df.iloc[0].values
     row_res = None
 
     featurizer = Featurizer()
 
     exec_times = []
-    n_samples = 10
+    n_samples = 1
     for i, mol in enumerate(supp):
         mol = Chem.AddHs(mol, addCoords=True, addResidueInfo=True)
         mol_coords = mol.GetConformer().GetPositions()
@@ -45,5 +44,6 @@ if __name__ == '__main__':
     max_diff = np.max(abs_diff)
     max_diff_index = np.argmax(abs_diff)
     avg_exec_time = sum(exec_times) / len(exec_times)
+    print(len(row_res))
     print(f'Execution time: {avg_exec_time*1000:.2f}ms')
     print(f'Max diff: {max_diff:.3f} at ({max_diff_index}) with {row_example[max_diff_index]} != {row_res[max_diff_index]}')

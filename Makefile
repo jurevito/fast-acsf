@@ -1,3 +1,3 @@
 compile:
-	gcc -shared -O2 -o .\featurizer\featurizer.dll -fPIC .\featurizer\featurizer.c .\featurizer\util.c
+	gcc -shared -O2 -o .\acsf\featurizer.dll -fPIC .\acsf\featurizer.c .\acsf\util.c
 
