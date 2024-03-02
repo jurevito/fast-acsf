@@ -98,56 +98,32 @@ double* featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int nu
 		}
     }
 
-    int num_close_triplets = 0;
-    for (int i = 0; i < num_mol_atom; i++) {
-        for (int j = 0; j < num_protein_atom; j++) {
-            if (dist_lp[i][j] < ANGULAR_CUTOFF) {
-                for (int k = j+1; k<num_protein_atom; k++) { 
-                    if (dist_lp[i][k] < ANGULAR_CUTOFF) {
-                        num_close_triplets++;
+    // Search for triplets of atoms close by to each other.
+    for (int lig_idx = 0; lig_idx < num_mol_atom; lig_idx++) {
+        for (int p1_idx = 0; p1_idx < num_protein_atom; p1_idx++) {
+            if (dist_lp[lig_idx][p1_idx] < ANGULAR_CUTOFF) {
+                for (int p2_idx = p1_idx+1; p2_idx<num_protein_atom; p2_idx++) { 
+                    if (dist_lp[lig_idx][p2_idx] < ANGULAR_CUTOFF) {
+                        
+                        int lig_atom_idx = mol_atoms[lig_idx].atom_index;
+                        int p1_atom_idx = protein_atoms[p1_idx].atom_index;
+                        int p2_atom_idx = protein_atoms[p2_idx].atom_index;
+
+                        // Calculate angular features.
+                        double angle = calc_angle(mol_atoms[lig_idx], protein_atoms[p1_idx], protein_atoms[p2_idx]);
+                        for (int l = 0 ; l<rs_angular_length ; l++) {
+                            for (int m = 0 ; m<N_THETA; m++) {
+                                int index = find_angular_index(lig_atom_idx, p1_atom_idx, p2_atom_idx, m, l, rs_angular_length);
+                                result[index + radial_length] += angular_sym_func(dist_lp[lig_idx][p1_idx], dist_lp[lig_idx][p2_idx], angle, theta_list[m], rs_angular[l]);
+                            }
+                        }
                     }
                 }
             }
 		}
     }
 
-    int index = 0;
-    Triplet* triplet_idxs = malloc(num_close_triplets * sizeof(Triplet));
-    for (int i = 0; i < num_mol_atom; i++) {
-        for (int j = 0; j < num_protein_atom; j++) {
-            if (dist_lp[i][j] < ANGULAR_CUTOFF) {
-                for (int k = j+1; k<num_protein_atom; k++) { 
-                    if (dist_lp[i][k] < ANGULAR_CUTOFF) {
-                        triplet_idxs[index].lig_idx = i;
-                        triplet_idxs[index].p1_idx = j;
-                        triplet_idxs[index].p2_idx = k;
-                        index++;
-                    }
-                }
-            }
-		}
-    }
-
-    double feat_sum = 0;
-    for (int i = 0; i < num_close_triplets; i++) {
-        int lig_idx = triplet_idxs[i].lig_idx;
-        int p1_idx = triplet_idxs[i].p1_idx;
-        int p2_idx = triplet_idxs[i].p2_idx;
-
-        int lig_atom_idx = mol_atoms[lig_idx].atom_index;
-        int p1_atom_idx = protein_atoms[p1_idx].atom_index;
-        int p2_atom_idx = protein_atoms[p2_idx].atom_index;
-
-        double angle = calc_angle(mol_atoms[lig_idx], protein_atoms[p1_idx], protein_atoms[p2_idx]);
-        for (int l = 0 ; l<rs_angular_length ; l++) {
-            for (int m = 0 ; m<N_THETA; m++) {
-                int index = find_angular_index(lig_atom_idx, p1_atom_idx, p2_atom_idx, m, l, rs_angular_length);
-                result[index + radial_length] += angular_sym_func(dist_lp[lig_idx][p1_idx], dist_lp[lig_idx][p2_idx], angle, theta_list[m], rs_angular[l]);
-            }
-        }
-    }
-
-    printf("Specific: %.8f, Feat Sum: %f, radial_len: %d\n", result[1867], feat_sum, radial_length);
+    printf("Specific: %.8f, radial_len: %d\n", result[1867], radial_length);
     printf("Result has %d element\n", radial_length + angular_length);
 
     // Free all memory that was used.
@@ -158,7 +134,6 @@ double* featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int nu
         free(dist_lp[i]);
     }
     free(dist_lp);
-    free(triplet_idxs);
 
     return result;
 }
