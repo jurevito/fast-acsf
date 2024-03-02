@@ -43,7 +43,7 @@ int angular_index(int p1_atom_idx, int lig_atom_idx, int p2_atom_idx, int th, in
 
 double* featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int num_protein_atom) {
 
-    // Setting radial steps.
+    // Initializing radial steps.
     int rs_radial_length = ceil((RADIAL_CUTOFF - 0.5) / RADIAL_STEP);
     double* rs_radial = malloc(rs_radial_length*sizeof(double));
 
@@ -53,7 +53,7 @@ double* featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int nu
         rad += RADIAL_STEP;
     }
 
-    // Setting angular steps.
+    // Initializing angular steps.
     int rs_angular_length = ceil((ANGULAR_CUTOFF - 0.5) / ANGULAR_STEP);
     double* rs_angular = malloc(rs_angular_length*sizeof(double));
 
@@ -63,13 +63,13 @@ double* featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int nu
         ang += ANGULAR_STEP;
     }
 
-    //Setting PL distance matrix.
+    //Initializing PL distance matrix.
     double** dist = malloc(num_mol_atom*sizeof(double*));
     for (int i = 0; i < num_mol_atom; i++) {
         dist[i] = malloc(num_protein_atom*sizeof(double));
     }
 
-    // Setting result vector.
+    // Initializing result vector.
     int radial_length = N_ELEMENTS*N_ELEMENTS * rs_radial_length;
     int angular_length = N_ELEMENTS * binom(N_ELEMENTS+1, 2) * N_THETA * rs_angular_length;
     double* result = calloc(radial_length + angular_length, sizeof(double));
@@ -90,14 +90,15 @@ double* featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int nu
 		}
     }
 
-    // Setting theta list.
+    // Initializing theta list.
     double* theta_list = malloc(N_THETA*sizeof(double));
     double interval = 2*M_PI / (N_THETA);
     for (int i = 0; i < N_THETA; i++) {
         theta_list[i] = interval*i;
     }
 
-    // Search for triplets of atoms close by to each other.
+    // Find triplets of atoms where distance between ligand atom
+    // and two protein atoms is small enough.
     for (int i = 0; i < num_mol_atom; i++) {
         for (int j = 0; j < num_protein_atom; j++) {
             if (dist[i][j] < ANGULAR_CUTOFF) {
@@ -125,14 +126,13 @@ double* featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int nu
 		}
     }
 
-    // Free all memory that was used.
-    free(rs_radial);
-    free(rs_angular);
-    free(theta_list);
     for (int i = 0; i < num_mol_atom; i++) {
         free(dist[i]);
     }
     free(dist);
+    free(rs_radial);
+    free(rs_angular);
+    free(theta_list);
 
     return result;
 }
