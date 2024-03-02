@@ -1,5 +1,5 @@
 from rdkit import Chem
-from featurizer.featurizer import featurize
+from featurizer.featurizer import Featurizer
 import numpy as np
 import pandas as pd
 import time
@@ -21,6 +21,8 @@ if __name__ == '__main__':
     row_example = df.iloc[0].values
     row_res = None
 
+    featurizer = Featurizer()
+
     exec_times = []
     n_samples = 10
     for i, mol in enumerate(supp):
@@ -29,7 +31,7 @@ if __name__ == '__main__':
         mol_atom_nums = [atom.GetAtomicNum() for atom in mol.GetAtoms()]
 
         start_time = time.perf_counter()
-        tmp_res = featurize(mol_coords, mol_atom_nums, protein_coords, protein_atom_nums)
+        tmp_res = featurizer.featurize(mol_coords, mol_atom_nums, protein_coords, protein_atom_nums)
         stop_time = time.perf_counter()
         exec_times.append(stop_time - start_time)
 

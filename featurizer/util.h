@@ -9,10 +9,18 @@ typedef struct {
 } Atom;
 
 typedef struct {
-    int lig_idx;
-    int p1_idx;
-    int p2_idx;
-} Triplet;
+    double radial_cutoff;
+    double angular_cutoff;
+    double radial_step;
+    double angular_step;
+    int num_theta;
+    int num_elems;
+} Config;
+
+typedef struct {
+    double* features;
+    int size;
+} Result;
 
 double eucl_dist(Atom p1, Atom p2);
 double dot_product(Atom a, Atom b);
