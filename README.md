@@ -3,8 +3,8 @@
 ## Performance
 ```
 aa2ar
--O2 -> 203.58ms
--O3 -> 124.22ms
+-O2 -> 122.63ms
+-O3 -> 126.06ms
 ```
 
 ## I need to review

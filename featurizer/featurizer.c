@@ -19,13 +19,11 @@ double radial_sym_func(double Rij, double Rs) {
     return exp(-eta * pow(Rij - Rs, 2)) * fc;
 }
 
-double angular_sym_func(double Rij, double Rik, double theta_ijk, double theta, double Rs) {
+double angular_sym_func(double Rij, double Rik, double theta_ijk, double theta, double Rs, double fc_Rij, double fc_Rik) {
     const double Rc = ANGULAR_CUTOFF;
     const double zeta = 8;
     const double eta = 4;
 
-    double fc_Rij = 0.5 * cos(M_PI * Rij / Rc) + 0.5;
-    double fc_Rik = 0.5 * cos(M_PI * Rik / Rc) + 0.5;
     return pow(2, 1-zeta) * pow(1 + cos(theta_ijk - theta), zeta) * exp(-eta * pow(((Rij + Rik) / 2 - Rs), 2)) * fc_Rij * fc_Rik;
 }
 
@@ -112,10 +110,13 @@ double* featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int nu
 
                         // Calculate angular features.
                         double angle = calc_angle(mol_atoms[lig_idx], protein_atoms[p1_idx], protein_atoms[p2_idx]);
+                        double fc_Rij = 0.5 * cos(M_PI * dist[lig_idx][p1_idx] / ANGULAR_CUTOFF) + 0.5;
+                        double fc_Rik = 0.5 * cos(M_PI * dist[lig_idx][p2_idx] / ANGULAR_CUTOFF) + 0.5;
+
                         for (int l = 0 ; l<rs_angular_length ; l++) {
                             for (int m = 0 ; m<N_THETA; m++) {
                                 int index = angular_index(p1_atom_idx, lig_atom_idx, p2_atom_idx, m, l, rs_angular_length);
-                                result[index + radial_length] += angular_sym_func(dist[lig_idx][p1_idx], dist[lig_idx][p2_idx], angle, theta_list[m], rs_angular[l]);
+                                result[index + radial_length] += angular_sym_func(dist[lig_idx][p1_idx], dist[lig_idx][p2_idx], angle, theta_list[m], rs_angular[l], fc_Rij, fc_Rik);
                             }
                         }
                     }
