@@ -98,8 +98,6 @@ double* featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int nu
 		}
     }
 
-    // This is how to get indeces of those I need to get angles.
-    // Much better. Instead of 1.017.000 it is only 42.025 which is 4%.
     int num_close_triplets = 0;
     for (int i = 0; i < num_mol_atom; i++) {
         for (int j = 0; j < num_protein_atom; j++) {
@@ -144,32 +142,12 @@ double* featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int nu
         for (int l = 0 ; l<rs_angular_length ; l++) {
             for (int m = 0 ; m<N_THETA; m++) {
                 int index = find_angular_index(lig_atom_idx, p1_atom_idx, p2_atom_idx, m, l, rs_angular_length);
-                double feat = angular_sym_func(dist_lp[lig_idx][p1_idx], dist_lp[lig_idx][p2_idx], angle, theta_list[m], rs_angular[l]);
-                result[index + radial_length] += feat;
-                if (p1_atom_idx == 0 &&
-                    lig_atom_idx == 0 &&
-                    p2_atom_idx == 0 &&
-                    m == 1 &&
-                    l == 1) {
-                        feat_sum += feat;
-                }
-
-                if (index == 4 && (p1_atom_idx != 0 ||
-                    lig_atom_idx != 0 ||
-                    p2_atom_idx != 0 ||
-                    m != 1 ||
-                    l != 1)) {
-                        printf("FUCK: (%d, %d, %d) (th = %d, rs = %d)\n", lig_atom_idx, p1_atom_idx, p2_atom_idx, m, l);
-                }
-                //if (index == 200) {
-                //    printf("INFO: (%d, %d, %d) (th = %d, rs = %d)\n", lig_atom_idx, p1_atom_idx, p2_atom_idx, m, l);
-                //}
+                result[index + radial_length] += angular_sym_func(dist_lp[lig_idx][p1_idx], dist_lp[lig_idx][p2_idx], angle, theta_list[m], rs_angular[l]);
             }
         }
     }
 
-    int ang_index = find_angular_index(0, 0, 8, 2, 2, rs_angular_length);
-    printf("Specific: %.8f, Feat Sum: %f, Index: %d, radial_len: %d\n", result[1867], feat_sum, ang_index, radial_length);
+    printf("Specific: %.8f, Feat Sum: %f, radial_len: %d\n", result[1867], feat_sum, radial_length);
     printf("Result has %d element\n", radial_length + angular_length);
 
     // Free all memory that was used.
