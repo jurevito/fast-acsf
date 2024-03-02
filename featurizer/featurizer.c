@@ -124,8 +124,8 @@ double* featurize(Atom* mol_atoms, int num_mol_atom, Atom* protein_atoms, int nu
 		}
     }
 
-    printf("Specific: %.8f, radial_len: %d\n", result[1867], radial_length);
-    printf("Result has %d element\n", radial_length + angular_length);
+    //printf("Specific: %.8f, radial_len: %d\n", result[1867], radial_length);
+    //printf("Result has %d element\n", radial_length + angular_length);
 
     // Free all memory that was used.
     free(rs_radial);
