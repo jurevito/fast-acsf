@@ -12,7 +12,6 @@ double radial_sym_func(double Rij, double Rs, double radial_cutoff) {
 }
 
 double angular_sym_func(double Rij, double Rik, double theta_ijk, double theta, double Rs, double fc_Rij, double fc_Rik, double angular_cutoff) {
-    const double Rc = angular_cutoff;
     const double zeta = 8;
     const double eta = 4;
 
