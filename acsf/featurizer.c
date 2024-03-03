@@ -14,7 +14,7 @@ double angular_sym_func(double Rij, double Rik, double theta_ijk, double theta, 
     const double zeta = 8;
     const double eta = 4;
 
-    return pow(2, 1 - zeta) * pow(1 + cos(theta_ijk - theta), zeta) * exp(-eta * pow(((Rij + Rik) / 2 - Rs), 2)) * fc_Rij * fc_Rik;
+    return pow(2, 1 - zeta) * pow(1 + cos(theta_ijk - theta), zeta) * exp(-eta * pow(((Rij + Rik) * 0.5 - Rs), 2)) * fc_Rij * fc_Rik;
 }
 
 int angular_index(int p1_atom_idx, int lig_atom_idx, int p2_atom_idx, int th, int rs, int rs_angular_length, int num_elem, int num_theta) {
