@@ -1,5 +1,6 @@
 import ctypes
 import numpy as np
+import itertools
 from rdkit import Chem
 import os
 
@@ -54,7 +55,29 @@ class Featurizer:
 
         # Convert element atomic numbers to index offsets.
         symbol_to_num = dict([(Chem.Atom(i).GetSymbol(), i) for i in range(1, 119)])
-        self.atomic_num_to_index = dict([(symbol_to_num[sym], i) for i, sym in enumerate(elements)])
+        self.atomic_num_to_index = dict([(symbol_to_num[sym], i) for i, sym in enumerate(self.elements)])
+
+        # Generate labels.
+        elem_labels = self.elements + ['DU']
+        rs_radial = np.arange(0.5, radial_cutoff, radial_step).tolist()
+        rs_angular = np.arange(0.5, angular_cutoff, angular_step).tolist()
+        theta_list = np.linspace(0, np.pi*2, num_theta, endpoint=False, dtype='float32').tolist()
+
+        radial_pairs = ['_'.join(comb) for comb in itertools.product(elem_labels, repeat=2)]
+        radial_labels = [f'{elems}_{rs}' for elems, rs in itertools.product(radial_pairs, range(len(rs_radial)))]
+
+        elem_triplets = [f"{e_j}_{e_i}_{e_k}" for (e_i, (e_j, e_k)) in 
+            list(itertools.product(
+                elem_labels,
+                list(itertools.combinations_with_replacement(elem_labels, 2))
+            ))
+        ]
+        angular_labels = [f"{elem_triplet}_{theta}_{rs}" 
+            for elem_triplet in elem_triplets
+                for theta in range(len(theta_list))
+                    for rs in range(len(rs_angular))]
+        
+        self.labels = radial_labels + angular_labels
 
     def __convert_to_c_atom(self, coords: np.array, atom_nums: list[str]):
         atom_array = (Atom * len(coords))()
@@ -76,6 +99,9 @@ class Featurizer:
         config.num_elems = len(self.elements) + 1
 
         return config
+    
+    def labels(self):
+        return self.labels
 
     def featurize(self, mol_coords: np.array, mol_atom_nums: list[int], protein_coords: np.array, protein_atom_nums: list[int]) -> np.array:
         mol_array = self.__convert_to_c_atom(mol_coords, mol_atom_nums)
