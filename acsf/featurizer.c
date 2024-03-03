@@ -4,11 +4,9 @@
 #include <stdlib.h>
 #include <omp.h>
 
-double radial_sym_func(double Rij, double Rs, double radial_cutoff) {
-    const double Rc = radial_cutoff;
+double radial_sym_func(double Rij, double fc, double Rs) {
     const double eta = 4.0;
 
-    double fc = 0.5 * cos(M_PI * Rij / Rc) + 0.5;
     return exp(-eta * pow(Rij - Rs, 2)) * fc;
 }
 
@@ -74,11 +72,12 @@ Result featurize(Atom *mol_atoms, int num_mol_atom, Atom *protein_atoms, int num
 
             // Calculate features only for pairs within radius.
             if (dist[i][j] < config.radial_cutoff) {
+                double fc = 0.5 * cos(M_PI * dist[i][j] / config.radial_cutoff) + 0.5;
 
                 // Calculate radial features.
                 for (int k = 0; k < rs_radial_length; k++) {
                     int index = (rs_radial_length * config.num_elems * mol_atoms[i].atom_index) + (rs_radial_length * protein_atoms[j].atom_index) + k;
-                    features[index] += radial_sym_func(dist[i][j], rs_radial[k], config.radial_cutoff);
+                    features[index] += radial_sym_func(dist[i][j], fc, rs_radial[k]);
                 }
             }
         }
