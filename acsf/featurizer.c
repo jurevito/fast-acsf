@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <omp.h>
 
 double radial_sym_func(double Rij, double Rs, double radial_cutoff) {
     const double Rc = radial_cutoff;
