@@ -1,3 +1,2 @@
 compile:
-	gcc -shared -O2 -fopenmp -static -Wall -o .\acsf\featurizer.dll -fPIC .\acsf\featurizer.c .\acsf\util.c
-
+	gcc -shared -O2 -ffast-math -Wall -o .\acsf\featurizer.dll -fPIC .\acsf\featurizer.c .\acsf\util.c
