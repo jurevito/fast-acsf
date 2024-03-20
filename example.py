@@ -1,5 +1,5 @@
 from rdkit import Chem
-from acsf.featurizer import Featurizer
+from acsf.feat import Featurizer
 
 POSES_PATH = './data/poses.sdf'
 PROTEIN_PATH = './data/protein.pdb'

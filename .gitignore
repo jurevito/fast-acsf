@@ -3,4 +3,4 @@ data
 .vscode
 *.exe
 *.dll
-*.os
+*.so
