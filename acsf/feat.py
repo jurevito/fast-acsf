@@ -26,15 +26,17 @@ class Config(ctypes.Structure):
         ("angular_step", ctypes.c_double),
         ("num_theta", ctypes.c_int),
         ("num_elems", ctypes.c_int),
+        ("num_mols", ctypes.c_int),
     ]
 
 class Result(ctypes.Structure):
     _fields_ = [
         ("features", ctypes.POINTER(ctypes.c_double)),
-        ("size", ctypes.c_int)
+        ("num_rows", ctypes.c_int),
+        ("num_cols", ctypes.c_int),
     ]
 
-_lib.featurize.argtypes = [ctypes.POINTER(Atom), ctypes.c_int, ctypes.POINTER(Atom), ctypes.c_int, Config]
+_lib.featurize.argtypes = [ctypes.POINTER(ctypes.POINTER(Atom)), ctypes.c_int, ctypes.POINTER(Atom), ctypes.c_int, Config]
 _lib.featurize.restype = Result
 
 class Featurizer:
@@ -89,7 +91,16 @@ class Featurizer:
 
         return atom_array
     
-    def __setup_config(self):
+    def __convert_to_c_atom_array(self, coords_matrix: np.array, atom_num_matrix: list[str]):
+        atom_arrays = (ctypes.POINTER(Atom) * len(coords_matrix))()
+
+        for i in range(len(coords_matrix)):
+            atom_array = self.__convert_to_c_atom(coords_matrix[i], atom_num_matrix[i])
+            atom_arrays[i] = ctypes.cast(atom_array, ctypes.POINTER(Atom))
+
+        return atom_arrays
+    
+    def __setup_config(self, num_mols: int):
         config = Config()
         config.radial_cutoff = self.radial_cutoff
         config.angular_cutoff = self.angular_cutoff
@@ -97,19 +108,20 @@ class Featurizer:
         config.angular_step = self.angular_step
         config.num_theta = self.num_theta
         config.num_elems = len(self.elements) + 1
+        config.num_mols = num_mols
 
         return config
-    
-    def labels(self):
-        return self.labels
 
-    def featurize(self, mol_coords: np.array, mol_atom_nums: list[int], protein_coords: np.array, protein_atom_nums: list[int]) -> np.array:
-        mol_array = self.__convert_to_c_atom(mol_coords, mol_atom_nums)
+    def featurize(self, mol_coords_matrix: np.array, mol_atom_num_matrix: np.array, protein_coords: np.array, protein_atom_nums: np.array) -> np.array:
+        if len(mol_coords_matrix) == 0:
+            raise ValueError("Molecule coordinates matrix is empty.")
+
+        mol_arrays = self.__convert_to_c_atom_array(mol_coords_matrix, mol_atom_num_matrix)
         protein_array = self.__convert_to_c_atom(protein_coords, protein_atom_nums)
-        config = self.__setup_config()
+        config = self.__setup_config(len(mol_coords_matrix))
 
-        result = _lib.featurize(mol_array, len(mol_coords), protein_array, len(protein_coords), config)
-        res = np.ctypeslib.as_array(result.features, shape=(result.size,))
+        result = _lib.featurize(mol_arrays, len(mol_coords_matrix[0]), protein_array, len(protein_coords), config)
+        res = np.ctypeslib.as_array(result.features, shape=(result.num_rows, result.num_cols))
         res = np.copy(res)
 
         _lib.free_features(result.features)

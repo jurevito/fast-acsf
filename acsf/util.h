@@ -15,11 +15,13 @@ typedef struct {
     double angular_step;
     int num_theta;
     int num_elems;
+    int num_mols;
 } Config;
 
 typedef struct {
     double* features;
-    int size;
+    int num_rows;
+    int num_cols;
 } Result;
 
 double eucl_dist(Atom p1, Atom p2);

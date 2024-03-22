@@ -33,7 +33,7 @@ int angular_index(int p1_atom_idx, int lig_atom_idx, int p2_atom_idx, int th, in
 
 void free_features(double *features) { free(features); }
 
-Result featurize(Atom *mol_atoms, int num_mol_atom, Atom *protein_atoms, int num_protein_atom, Config config) {
+Result featurize(Atom **mol_atom_list, int num_mol_atom, Atom *protein_atoms, int num_protein_atom, Config config) {
 
     // Initializing radial steps.
     int rs_radial_length = ceil((config.radial_cutoff - 0.5) / config.radial_step);
@@ -55,34 +55,6 @@ Result featurize(Atom *mol_atoms, int num_mol_atom, Atom *protein_atoms, int num
         ang += config.angular_step;
     }
 
-    // Initializing PL distance matrix.
-    double **dist = malloc(num_mol_atom * sizeof(double *));
-    for (int i = 0; i < num_mol_atom; i++) {
-        dist[i] = malloc(num_protein_atom * sizeof(double));
-    }
-
-    // Initializing features vector.
-    int radial_length = config.num_elems * config.num_elems * rs_radial_length;
-    int angular_length = config.num_elems * binom(config.num_elems + 1, 2) * config.num_theta * rs_angular_length;
-    double *features = calloc(radial_length + angular_length, sizeof(double));
-
-    for (int i = 0; i < num_mol_atom; i++) {
-        for (int j = 0; j < num_protein_atom; j++) {
-            dist[i][j] = eucl_dist(mol_atoms[i], protein_atoms[j]);
-
-            // Calculate features only for pairs within radius.
-            if (dist[i][j] < config.radial_cutoff) {
-                double fc = 0.5 * cos(M_PI * dist[i][j] / config.radial_cutoff) + 0.5;
-
-                // Calculate radial features.
-                for (int k = 0; k < rs_radial_length; k++) {
-                    int index = (rs_radial_length * config.num_elems * mol_atoms[i].atom_index) + (rs_radial_length * protein_atoms[j].atom_index) + k;
-                    features[index] += radial_sym_func(dist[i][j], fc, rs_radial[k]);
-                }
-            }
-        }
-    }
-
     // Initializing theta list.
     double *theta_list = malloc(config.num_theta * sizeof(double));
     double interval = 2 * M_PI / (config.num_theta);
@@ -90,44 +62,77 @@ Result featurize(Atom *mol_atoms, int num_mol_atom, Atom *protein_atoms, int num
         theta_list[i] = interval * i;
     }
 
-    // Find triplets of atoms where distance between ligand atom
-    // and two protein atoms is small enough.
-    for (int i = 0; i < num_mol_atom; i++) {
-        for (int j = 0; j < num_protein_atom; j++) {
-            if (dist[i][j] < config.angular_cutoff) {
-                for (int k = j + 1; k < num_protein_atom; k++) {
-                    if (dist[i][k] < config.angular_cutoff) {
+    // Initializing features matrix.
+    int radial_length = config.num_elems * config.num_elems * rs_radial_length;
+    int angular_length = config.num_elems * binom(config.num_elems + 1, 2) * config.num_theta * rs_angular_length;
+    double *features = calloc((radial_length + angular_length) * config.num_mols, sizeof(double));
 
-                        int lig_atom_idx = mol_atoms[i].atom_index;
-                        int p1_atom_idx = protein_atoms[j].atom_index;
-                        int p2_atom_idx = protein_atoms[k].atom_index;
+    for (int mol_idx = 0 ; mol_idx< config.num_mols; mol_idx++) {
+        Atom *mol_atoms = mol_atom_list[mol_idx];
 
-                        // Calculate angular features.
-                        double angle = calc_angle(mol_atoms[i], protein_atoms[j], protein_atoms[k]);
-                        double fc_Rij = 0.5 * cos(M_PI * dist[i][j] / config.angular_cutoff) + 0.5;
-                        double fc_Rik = 0.5 * cos(M_PI * dist[i][k] / config.angular_cutoff) + 0.5;
+        // Initializing PL distance matrix.
+        double **dist = malloc(num_mol_atom * sizeof(double *));
+        for (int i = 0; i < num_mol_atom; i++) {
+            dist[i] = malloc(num_protein_atom * sizeof(double));
+        }
 
-                        for (int l = 0; l < rs_angular_length; l++) {
-                            for (int m = 0; m < config.num_theta; m++) {
-                                int index = angular_index(p1_atom_idx, lig_atom_idx, p2_atom_idx, m, l, rs_angular_length, config.num_elems, config.num_theta);
-                                features[index + radial_length] +=
-                                    angular_sym_func(dist[i][j], dist[i][k], angle, theta_list[m], rs_angular[l], fc_Rij, fc_Rik, config.angular_cutoff);
+        for (int i = 0; i < num_mol_atom; i++) {
+            for (int j = 0; j < num_protein_atom; j++) {
+                dist[i][j] = eucl_dist(mol_atoms[i], protein_atoms[j]);
+
+                // Calculate features only for pairs within radius.
+                if (dist[i][j] < config.radial_cutoff) {
+                    double fc = 0.5 * cos(M_PI * dist[i][j] / config.radial_cutoff) + 0.5;
+
+                    // Calculate radial features.
+                    for (int k = 0; k < rs_radial_length; k++) {
+                        int index = (rs_radial_length * config.num_elems * mol_atoms[i].atom_index) + (rs_radial_length * protein_atoms[j].atom_index) + k;
+                        features[mol_idx * (radial_length + angular_length) + index] += radial_sym_func(dist[i][j], fc, rs_radial[k]);
+                    }
+                }
+            }
+        }
+
+        // Find triplets of atoms where distance between ligand atom
+        // and two protein atoms is small enough.
+        for (int i = 0; i < num_mol_atom; i++) {
+            for (int j = 0; j < num_protein_atom; j++) {
+                if (dist[i][j] < config.angular_cutoff) {
+                    for (int k = j + 1; k < num_protein_atom; k++) {
+                        if (dist[i][k] < config.angular_cutoff) {
+
+                            int lig_atom_idx = mol_atoms[i].atom_index;
+                            int p1_atom_idx = protein_atoms[j].atom_index;
+                            int p2_atom_idx = protein_atoms[k].atom_index;
+
+                            // Calculate angular features.
+                            double angle = calc_angle(mol_atoms[i], protein_atoms[j], protein_atoms[k]);
+                            double fc_Rij = 0.5 * cos(M_PI * dist[i][j] / config.angular_cutoff) + 0.5;
+                            double fc_Rik = 0.5 * cos(M_PI * dist[i][k] / config.angular_cutoff) + 0.5;
+
+                            for (int l = 0; l < rs_angular_length; l++) {
+                                for (int m = 0; m < config.num_theta; m++) {
+                                    int index = angular_index(p1_atom_idx, lig_atom_idx, p2_atom_idx, m, l, rs_angular_length, config.num_elems, config.num_theta);
+                                    features[mol_idx * (radial_length + angular_length) + radial_length + index] +=
+                                        angular_sym_func(dist[i][j], dist[i][k], angle, theta_list[m], rs_angular[l], fc_Rij, fc_Rik, config.angular_cutoff);
+                                }
                             }
                         }
                     }
                 }
             }
         }
-    }
 
-    for (int i = 0; i < num_mol_atom; i++) {
-        free(dist[i]);
+        for (int i = 0; i < num_mol_atom; i++) {
+            free(dist[i]);
+        }
+        free(dist);
     }
-    free(dist);
+    
     free(rs_radial);
     free(rs_angular);
     free(theta_list);
 
-    Result result = {features, radial_length + angular_length};
+    Result result = {features, config.num_mols, radial_length + angular_length};
     return result;
 }
