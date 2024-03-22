@@ -67,6 +67,7 @@ Result featurize(Atom **mol_atom_list, int num_mol_atom, Atom *protein_atoms, in
     int angular_length = config.num_elems * binom(config.num_elems + 1, 2) * config.num_theta * rs_angular_length;
     double *features = calloc((radial_length + angular_length) * config.num_mols, sizeof(double));
 
+    #pragma omp parallel for
     for (int mol_idx = 0 ; mol_idx< config.num_mols; mol_idx++) {
         Atom *mol_atoms = mol_atom_list[mol_idx];
 
