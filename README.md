@@ -19,4 +19,9 @@ featurizer = Featurizer(
 ```
 
 ## ⚡ Performance
-Testing was done on `i7-9700K` processor with `32GB` of `3200MHz` RAM. Featurization of `aa2ar` complex from [PDBBind](https://www.pdbbind-plus.org.cn/) dataset took on average 75ms per pose. Receptor has 4570 atoms, while ligand has 40. Default settings were used to generate feature vector with size 11583.
+Testing was done on `i7-9700K` processor with `32GB` of `3200MHz` RAM on Windows WSL (Ubuntu). Featurization of `aa2ar` complex from [PDBBind](https://www.pdbbind-plus.org.cn/) dataset took on average 45ms per pose. Receptor has 4570 atoms, while ligand has 40. Default settings were used to generate feature vector with size 11583. It support also batch featurization and it is parallelized with OpenMP.
+
+| Num. of Poses |   Time |
+|:-------------:|-------:|
+|             1 |   45ms |
+|          1000 | 6200ms |

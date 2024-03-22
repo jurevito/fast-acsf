@@ -1,5 +1,7 @@
 from rdkit import Chem
 from acsf.feat import Featurizer
+import numpy as np
+import pandas as pd
 
 POSES_PATH = './data/poses.sdf'
 PROTEIN_PATH = './data/protein.pdb'
@@ -18,19 +20,29 @@ featurizer = Featurizer(
     elements=['H', 'C', 'N', 'O', 'P', 'S', 'Cl', 'Zn']
 )
 
-for i, mol in enumerate(supp):
+mol_coords_list = []
+mol_atoms_list = []
 
-    # Protonate ligand pose and get atom information.
+# Prepare ligand poses.
+for i, mol in enumerate(supp):
     mol = Chem.AddHs(mol, addCoords=True, addResidueInfo=True)
     mol_coords = mol.GetConformer().GetPositions()
-    mol_atom_nums = [atom.GetAtomicNum() for atom in mol.GetAtoms()]
+    mol_atoms = [atom.GetAtomicNum() for atom in mol.GetAtoms()]
 
-    # Featurize ligand - protein complex. 
-    res = featurizer.featurize(
-        mol_coords, 
-        mol_atom_nums, 
-        protein_coords, 
-        protein_atom_nums
-    )
-    
-    break
+    mol_coords_list.append(mol_coords)
+    mol_atoms_list.append(mol_atoms)
+
+mol_coords_matrix = np.stack(mol_coords_list, 0)
+mol_atoms_matrix = np.stack(mol_atoms_list, 0)
+
+# Featurize all ligand - protein poses. 
+feats = featurizer.featurize(
+    mol_coords_matrix, 
+    mol_atoms_matrix, 
+    protein_coords, 
+    protein_atom_nums
+)
+
+# Create a pandas dataframe with the features.
+df = pd.DataFrame(feats, columns=featurizer.labels)
+print(df.head(10))
